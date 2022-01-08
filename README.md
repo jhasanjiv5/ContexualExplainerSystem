@@ -1,1 +1,2 @@
-# ContexualExplainerSystem prototype that explains the behavior and behavioral anomalies of CPS caused by CIs.
+# Contexual Explainer System 
+ A prototype to explain the behavior and behavioral anomalies of CPS caused by its contextual influences.
