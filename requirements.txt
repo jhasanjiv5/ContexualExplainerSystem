@@ -1,0 +1,13 @@
+pandas~=1.2.2
+scikit-learn~=0.24.2
+shap~=0.40.0
+tabulate~=0.8.9
+SPARQLWrapper~=1.8.5
+requests~=2.24.0
+NICEx
+dice-ml
+python-rake==1.4.4
+opencv-python~=4.5.5.62
+numpy~=1.18.5
+tensorflow~=2.3.1
+influxdb~=5.3.1
