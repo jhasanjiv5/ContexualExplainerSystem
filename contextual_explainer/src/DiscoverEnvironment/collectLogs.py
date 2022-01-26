@@ -23,11 +23,12 @@ def get_context_logs(context_variables):
                 dfs = df
             else:
                 dfs = pd.merge_asof(dfs, df, on='timestamp')
-        print(dfs)
-        return dfs
+
     except Exception as err:
         print(err)
         raise
+
+    return dfs
 
 
 def get_cps_logs():  # todo: get the logs from CPS

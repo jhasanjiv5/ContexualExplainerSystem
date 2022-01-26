@@ -1,5 +1,5 @@
 from SPARQLWrapper import SPARQLWrapper, JSON
-from src import config
+import config
 
 
 def discover_context(cps_name="Robot13"):
