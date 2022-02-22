@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from tslearn.metrics import dtw_path
 
 
-def check_for_correlation(dfs):
+def check_for_correlation(ds):
     """
     show cross correlation percentages to determine if it is worth checking for counterfactuals or not
 

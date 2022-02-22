@@ -67,21 +67,21 @@ def nice_explain(predict_fn, X_train, cat_feat, num_feat, y_train, query_instanc
     return cf
 
 
-def visualize_explanation(clf, cf, query_instance):
+'''def visualize_explanation(clf, cf, query_instance, feature_names):
     """
 
     :param clf:
     :param cf:
     :param query_instance:
     """
-    features = ['age', 'workclass', 'education', 'marital-status', 'occupation', 'relationship', 'race', 'sex',
-                'capital-gain', 'capital-loss', 'hours-per-week']
+    features = feature_names
 
     print("Model Decision:", clf.predict(query_instance))
 
     print("Query Instance: \n {}".format(
-        tabulate(query_instance, headers=features, tablefmt='fancy_grid', missingval='N/A')))
+        tabulate(query_instance, headers=features, tablefmt='pretty', missingval='N/A')))
 
     print("Counterfactual tagret class:", clf.predict(cf))
 
-    print("Counterfactuals: \n {}".format(tabulate(cf, headers=features, tablefmt='fancy_grid', missingval='N/A')))
+    print("Counterfactuals: \n {}".format(tabulate(cf, headers=features, tablefmt='pretty', missingval='N/A')))
+'''

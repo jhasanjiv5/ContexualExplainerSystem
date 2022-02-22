@@ -12,6 +12,7 @@ def find_outlier_label(df):
     # Calculate difference
     df['diff'] = df['Temperatura'] - df['rolling_temp']
 
+    #after finding the diff the rows are dropped based on the values of diff compare to threshold
     # Flag rows to be dropped as `1`
     df['drop_flag'] = np.where((df['diff'] > upper_threshold) | (df['diff'] < lower_threshold), 1, 0)
 
