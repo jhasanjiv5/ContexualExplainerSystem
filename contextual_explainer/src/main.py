@@ -9,38 +9,45 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 from tabulate import tabulate
+from keywordExtraction import keywordExtract as ky
 
 
 def find_keywords(query):
-    return query
+    message_keywords = ky.keyword_extract(query)
+    message_keywords_lower = [x.lower() for x in message_keywords]
+    return message_keywords_lower
 
 
 def explain_graph(option):
     st.write(option)
+    location, contextual_variables = discover.discover_context()
+    '''Context discovered at:'''
+    st.write(location)
+
+    '''Found contextual factors:'''
+    st.write(contextual_variables)
 
 
 def visualize_explanation(clf, cf, query_instance, feature_names):
     """
-
     :param clf:
     :param cf:
     :param query_instance:
     """
 
-    st.sidebar.text('Counterfactual tagret class:')
-    st.sidebar.text(clf.predict(cf))
+    st.text('Counterfactual tagret class:')
+    st.text(clf.predict(cf))
 
-    st.sidebar.text('Counterfactuals:')
-    st.sidebar.text(tabulate(cf, headers=feature_names, tablefmt='pretty', missingval='N/A'))
+    st.text('Counterfactuals:')
+    st.text(tabulate(cf, headers=feature_names, tablefmt='pretty', missingval='N/A'))
 
-    st.sidebar.text('List of causally relevant features:')
+    st.text('List of causally relevant features:')
     related_features = []
     diff = np.where(cf != query_instance)[1]
     for i in diff:
         related_features.append(feature_names[i])
-
-    explain_graph(
-        st.sidebar.selectbox(label="Select a feature to explain further:", options=related_features, on_change=True))
+    # show explanation for top related feature instead of selection box for simplicity
+    explain_graph(related_features[0])
 
 
 if __name__ == '__main__':
@@ -54,6 +61,7 @@ if __name__ == '__main__':
     # location, context_variables = discover.discover_context()
     # dfs = collectLogs.get_context_logs(context_variables)
     query = st.sidebar.text_input('Query:', 'please ask here...')
+    time = st.sidebar.text_input('Time:', 'at what time...')
     st.sidebar.text('Found Keywords:')
     st.sidebar.text(find_keywords(query))
 
@@ -82,16 +90,17 @@ if __name__ == '__main__':
                          546.332,
                          1136.95, 732.2, 632.87, 942.708, 817.858, 569.395, 178.586, 374.13, 301.229, 91.1615, 29.1667,
                          23.4375,
-                         28.6458, 24.4792, 26.5625, 29.9479, 30.0926, 30.0926, 30.9606, 32.1181, 33.5648, 32.1181, 36.169,
+                         28.6458, 24.4792, 26.5625, 29.9479, 30.0926, 30.0926, 30.9606, 32.1181, 33.5648, 32.1181,
+                         36.169,
                          36.169]
         query_instance = np.array(instance_list, dtype=np.float64).reshape(1, len(instance_list))
         clf = cl.predict_ir(X_train, X_test, y_train, y_test, num_feat, cat_feat)
 
-        st.sidebar.text('Model Decision:')
-        st.sidebar.text(clf.predict(query_instance))
+        st.text('Model Decision:')
+        st.text(clf.predict(query_instance))
 
-        st.sidebar.text('Query Instance:')
-        st.sidebar.text(tabulate(query_instance, headers=feature_names, tablefmt='pretty', missingval='N/A'))
+        st.text('Query Instance:')
+        st.text(tabulate(query_instance, headers=feature_names, tablefmt='pretty', missingval='N/A'))
 
         cf = ex.nice_explain(lambda x: clf.predict_proba(x), X_train, cat_feat, num_feat, y_train,
                              query_instance)
