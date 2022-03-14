@@ -1,7 +1,7 @@
 import shap
 import dice_ml
 from dice_ml.utils import helpers  # helper functions
-from nice.explainers import NICE
+from nice import NICE
 from tabulate import tabulate
 
 
@@ -60,9 +60,17 @@ def nice_explain(predict_fn, X_train, cat_feat, num_feat, y_train, query_instanc
     :param query_instance:
     :return:
     """
-    NICE_explainer = NICE(optimization='sparsity',
-                          justified_cf=True)
-    NICE_explainer.fit(predict_fn, X_train, cat_feat, num_feat, y_train)
+    NICE_explainer = NICE(predict_fn,
+                          X_train,
+                          cat_feat,
+                          num_feat,
+                          y_train,
+                          optimization='sparsity',
+                          justified_cf=True,
+                          distance_metric='HEOM',
+                          num_normalization='minmax',
+                          auto_encoder=None)
+    # NICE_explainer.fit(predict_fn, X_train, cat_feat, num_feat, y_train)
     cf = NICE_explainer.explain(query_instance)
     return cf
 

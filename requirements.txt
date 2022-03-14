@@ -4,8 +4,6 @@ shap~=0.40.0
 tabulate~=0.8.9
 SPARQLWrapper~=1.8.5
 requests~=2.24.0
-NICEx
-dice-ml
 python-rake==1.4.4
 opencv-python~=4.5.5.62
 numpy~=1.18.5
@@ -16,3 +14,7 @@ flask_restful
 slackclient~=2.9.3
 matplotlib~=3.5.1
 tslearn~=0.5.2
+streamlit
+watchdog
+NICEx
+dice-ml

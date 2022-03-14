@@ -1,8 +1,156 @@
-from SPARQLWrapper import SPARQLWrapper, JSON
+from SPARQLWrapper import SPARQLWrapper, JSON, N3, POST
 import config
+from rdflib import Graph
+
+sparql = SPARQLWrapper(config.sparql_endpoint)
+
+sparql.setCredentials(config.sparql_username, config.sparql_password)
 
 
-def discover_context(cps_name="Robot13"):
+def select_relationships(ontology_prefix, ontology_uri, subject, object):
+    sparql.setQuery(
+        """PREFIX %s: %s
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX san: <http://www.irit.fr/recherches/MELODI/ontologies/SAN#>
+PREFIX cd: <https://things.interactions.ics.unisg.ch#>
+select ?type ?count where{
+    %s:%s ?t ?a .
+    ?a rdf:type %s:%s ;
+       san:hasEffect ?effect .
+    ?effect rdf:type ?type ;
+            cd:observationCount ?count .
+} """ % (ontology_prefix, ontology_uri, ontology_prefix, subject, ontology_prefix, object)
+    )
+    found_relationships = []
+    sparql.setReturnFormat(JSON)
+    qres2 = sparql.query().convert()
+    for r in qres2['results']['bindings']:
+        for i in r:
+            found_relationships.append(r[i]['value'])
+
+    return found_relationships
+
+
+def show_effects(ontology_prefix, ontology_uri, subject):
+    sparql.setQuery(
+        """PREFIX %s: %s
+PREFIX brick: <https://brickschema.org/schema/Brick#>
+PREFIX cd: <https://things.interactions.ics.unisg.ch#>
+PREFIX san: <http://www.irit.fr/recherches/MELODI/ontologies/SAN#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+select ?entity ?type ?count ?rating ?feedback where{
+    %s:%s san:isActedUponBy ?e .
+    ?e rdf:type ?entity ;
+       san:hasEffect ?effect .
+    ?effect rdf:type ?type ;
+            cd:observationCount ?count ;
+    	cd:textualFeedback ?feedback ;
+        cd:influenceRating ?rating .
+} """ % (ontology_prefix, ontology_uri, ontology_prefix, subject)
+    )
+    found_relationships = []
+    sparql.setReturnFormat(JSON)
+    qres2 = sparql.query().convert()
+    for r in qres2['results']['bindings']:
+        for i in r:
+            found_relationships.append(r[i]['value'])
+    return found_relationships
+
+
+def insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object, count):
+    sparqlpost = SPARQLWrapper(config.sparql_endpoint+"/statements")
+    sparqlpost.setCredentials(config.sparql_username, config.sparql_password)
+    feedback = input('Add your feedback')
+    rating = input('Do you agree with found relationship?')
+    sparqlpost.setQuery(
+        """PREFIX %s: %s
+PREFIX brick: <https://brickschema.org/schema/Brick#>
+PREFIX cd: <https://things.interactions.ics.unisg.ch#>
+PREFIX san: <http://www.irit.fr/recherches/MELODI/ontologies/SAN#>
+
+INSERT{ 
+    ?m1 a %s:%s .
+    ?o1 a cd:%s ;
+    cd:observationCount %s ;
+    cd:textualFeedback "%s";
+    cd:influenceRating  %s.
+    ?m1 san:hasEffect ?o1 .
+    %s:%s san:isActedUponBy ?m1 .
+    
+    } 
+    
+WHERE{
+    SELECT  ?m1 ?o1
+    WHERE{
+    
+    BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#contextsensor",strUUID())) as ?m1) . 
+    BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#contextseffect",strUUID())) as ?o1) .
+    
+    }
+    }	
+        """ % (
+            ontology_prefix, ontology_uri, ontology_prefix, object, predicate, count, feedback, rating, ontology_prefix,
+            subject)
+
+    )
+    sparqlpost.setMethod(POST)
+    sparql.setReturnFormat(JSON)
+    qres2 = sparqlpost.query().convert()
+    return qres2
+
+
+def discover_context(ontology_prefix, ontology_uri, cps_name=['RB30_OG4_61-400_standing_light_1']):
+    """
+    Query the context and extract the location and observable contextual variables
+
+    :return: location, context_variables
+    """
+    # prefix should also be passed or not?
+    for c in cps_name:
+        sparql.setQuery(
+            """PREFIX %s: %s
+            PREFIX brick: <https://brickschema.org/schema/Brick#>
+            DESCRIBE ?td where
+            {
+            %s:%s %s:hasTD ?td
+            }""" % (ontology_prefix, ontology_uri, ontology_prefix, c, ontology_prefix)
+
+        )
+        cps_td = ''
+
+        sparql.setReturnFormat(N3)
+        qres1 = sparql.query().convert()
+        g = Graph()
+        g.parse(data=qres1, format="n3")
+        data = g.serialize(format='n3')
+        cps_td = data.split("\n\n")[1].split('"')[1]
+        # TODO: can we use select instead of describe for sparql query? td link extraction would be easier. Perhaps add title to the instances and then select instances based on titles. it would return JSON and then easier to extract the TD link.
+        print(cps_td)
+
+        sparql.setQuery(
+            """PREFIX %s: %s
+            PREFIX brick: <https://brickschema.org/schema/Brick#>
+            select ?TD{
+                ?room brick:regulates %s:%s ;
+                      (brick:hasPoint|brick:hasPart|hsg:hasTD|brick:hasLocation)* ?TD .   
+            }	
+            """ % (ontology_prefix, ontology_uri, ontology_prefix, c)
+        )
+
+        sparql.setReturnFormat(JSON)
+        qres2 = sparql.query().convert()
+
+        context_variables = []
+
+        for r in qres2['results']['bindings']:
+            for i in r:
+                if 'datatype' in r[i] and r[i]['datatype'] == "http://www.w3.org/2001/XMLSchema#anyURI":
+                    context_variables.append(r[i]['value'])
+
+        return cps_td, context_variables
+
+
+'''def discover_context(cps_name="Robot13"):
     """
     Query the context and extract the location and observable contextual variables
 
@@ -42,8 +190,8 @@ def discover_context(cps_name="Robot13"):
         ?room a bot:Space ;          
                 rdfs:label ?roomName ;
              bot:containsElement ?s1 .
-        ?s1 a sosa:Sensor;
-             a td:Thing;
+        ?s1 a sosa:Sensor ;
+             a td:Thing ;
             td:name ?sensorName  ;
     	    td:hasPropertyAffordance ?pi .
         ?pi a td:PropertyAffordance;
@@ -69,3 +217,4 @@ def discover_context(cps_name="Robot13"):
                                   })
 
     return location, context_variables
+'''
