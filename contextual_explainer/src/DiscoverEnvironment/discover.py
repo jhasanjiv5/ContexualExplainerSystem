@@ -13,7 +13,7 @@ def select_relationships(ontology_prefix, ontology_uri, subject, object):
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX san: <http://www.irit.fr/recherches/MELODI/ontologies/SAN#>
 PREFIX cd: <https://things.interactions.ics.unisg.ch#>
-select ?type ?count where{
+select ?type where{
     %s:%s ?t ?a .
     ?a rdf:type %s:%s ;
        san:hasEffect ?effect .
@@ -25,9 +25,10 @@ select ?type ?count where{
     sparql.setReturnFormat(JSON)
     qres2 = sparql.query().convert()
     for r in qres2['results']['bindings']:
+        data = []
         for i in r:
-            found_relationships.append(r[i]['value'])
-
+            data.append(r[i]['value'])
+        found_relationships.append(data)
     return found_relationships
 
 
@@ -48,20 +49,23 @@ select ?entity ?type ?count ?rating ?feedback where{
         cd:influenceRating ?rating .
 } """ % (ontology_prefix, ontology_uri, ontology_prefix, subject)
     )
-    found_relationships = []
+    found_relationships = {}
     sparql.setReturnFormat(JSON)
     qres2 = sparql.query().convert()
+    count = 0
     for r in qres2['results']['bindings']:
+        data = {}
         for i in r:
-            found_relationships.append(r[i]['value'])
+            data.update({i: r[i]['value']})
+        found_relationships.update({count: data})
+        count += 1
     return found_relationships
 
 
-def insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object, count):
-    sparqlpost = SPARQLWrapper(config.sparql_endpoint+"/statements")
+def insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object, count, feedback, rating):
+    sparqlpost = SPARQLWrapper(config.sparql_endpoint + "/statements")
     sparqlpost.setCredentials(config.sparql_username, config.sparql_password)
-    feedback = input('Add your feedback')
-    rating = input('Do you agree with found relationship?')
+
     sparqlpost.setQuery(
         """PREFIX %s: %s
 PREFIX brick: <https://brickschema.org/schema/Brick#>

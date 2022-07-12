@@ -11,7 +11,7 @@ client = DataFrameClient(host=config.url, port=config.port, username=config.user
                          database=config.database_name)
 
 
-class Context(Resource):
+class ExplainInfluence(Resource):
     def get(self):
         parser = reqparse.RequestParser()  # initialize
         parser.add_argument('sensorname', required=True)  # add args
@@ -43,7 +43,7 @@ class Context(Resource):
         return {'data': df.to_json(orient='records', date_format='iso')}, 200  # return data with 200 OK
 
 
-api.add_resource(Context, '/context')  # add endpoints
+api.add_resource(ExplainInfluence, '/influence')  # add endpoints
 
 if __name__ == '__main__':
     app.run()  # run our Flask app
