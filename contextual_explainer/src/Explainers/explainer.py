@@ -27,24 +27,14 @@ def dice_explain(clf, ds, query_instance):
     :param ds:
     :param query_instance:
     """
-    # d = dice_ml.Data(dataframe=ds,
-    #                  continuous_features=['sensor_44', 'sensor_45', 'sensor_46', 'sensor_47',
-    #                                       'sensor_48', 'sensor_49', 'sensor_50', 'sensor_51'],
-    #                  outcome_name='machine_status')
-    d = dice_ml.Data(dataframe=helpers.load_adult_income_dataset(),
-                     continuous_features=['age', 'hours_per_week'],
-                     outcome_name='income')
-    m = dice_ml.Model(model_path=dice_ml.utils.helpers.get_adult_income_modelpath())
-    exp = dice_ml.Dice(d, m)
-    query_instance = {'age': 22,
-                      'workclass': 'Private',
-                      'education': 'HS-grad',
-                      'marital_status': 'Single',
-                      'occupation': 'Service',
-                      'race': 'White',
-                      'gender': 'Female',
-                      'hours_per_week': 45}
-    dice_exp = exp.generate_counterfactuals(query_instance, total_CFs=4, desired_class="opposite")
+    d = dice_ml.Data(dataframe=ds,
+                     continuous_features=['temperature', 'humidity', 'uvi', 'pressure', 'light', 'Temperature',
+                                          'LightLevel'],
+                     outcome_name='r400')
+    m = dice_ml.Model(model=clf, backend='sklearn')
+    exp = dice_ml.Dice(d, m, method="random")
+    dice_exp = exp.generate_counterfactuals(query_instance, total_CFs=4, desired_class="opposite",
+                                            features_to_vary=['temperature', 'humidity', 'uvi', 'pressure', 'light'])
     dice_exp.visualize_as_dataframe()
     dice_exp.cf_examples_list[0].final_cfs_df.to_csv(path_or_buf='counterfactuals.csv', index=False)
 

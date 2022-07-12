@@ -1,4 +1,4 @@
-from DiscoverEnvironment import collectLogs, discover, insert_relationship
+from DiscoverEnvironment import collectLogs, discover
 from TimeSyncAndCorrelation import correlate
 from SurrogateModels import classifier as cl
 from sklearn import model_selection
@@ -23,35 +23,59 @@ def explain_graph(option):
     st.write(option)
 
 
-def visualize_explanation(clf, cf, query_instance, feature_names, subject=None, predicate=None, object=Nane):
+def visualize_explanation(clf, cf, query_instance, feature_names, ontology_prefix, ontology_uri, subject=None):
     """
     :param clf:
     :param cf:
     :param query_instance:
     """
+    predicate = None
+    object = None
 
-    st.text('Counterfactual tagret class:')
-    st.text(clf.predict(cf))
+    print('Counterfactual tagret class:')
+    print(clf.predict(cf))
 
-    st.text('Counterfactuals:')
-    st.text(tabulate(cf, headers=feature_names, tablefmt='pretty', missingval='N/A'))
-    st.text('List of causally relevant features:')
+    print('Counterfactuals:')
+    print(tabulate(cf, headers=feature_names, tablefmt='pretty', missingval='N/A'))
+    print('List of causally relevant features:')
     related_features = []
     diff = np.where(cf != query_instance)[1]
     low_diff = np.where(cf < query_instance)[1]
     high_diff = np.where(cf > query_instance)[1]
     for i in diff:
         related_features.append(feature_names[i])
+    explain_graph(related_features)
+
+    for i in diff:
         if i in low_diff:
-            predicate = 'negative effect'
-            object = i
+            predicate = 'negativeEffect'
+            object = feature_names[i]
         if i in high_diff:
-            predicate = 'positive effect'
-            object = i
-        insert_relationship(subject, predicate, object)
-        st.text(subject + 'has' + predicate + 'on' + object)
+            predicate = 'positiveEffect'
+            object = feature_names[i]
+        st.text(object + ' has ' + predicate + ' on ' + subject)
+
+        feedback = st.sidebar.text_input('Add your feedback')
+        rating = False
+        answer_given = st.sidebar.text_input('Do you agree with found relationship?')
+
+        # Every form must have a submit button.
+
+        if answer_given.lower() == 'yes':
+            rating = True
+        rel_exist = discover.select_relationships(ontology_prefix, ontology_uri, subject, object)
+        if len(rel_exist) > 0:
+            print(rel_exist)
+            discover.insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object,
+                                         len(rel_exist) + 1,
+                                         feedback, rating)
+        else:
+            discover.insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object, 1,
+                                         feedback, rating)
     # show explanation for top related feature instead of selection box for simplicity
-    explain_graph(related_features[0])
+
+    print(discover.show_effects(ontology_prefix, ontology_uri, subject))
+
 
 if __name__ == '__main__':
     # cps_td, contextual_variables = discover.discover_context('hsg:RB30_OG4_61-400_standing_light_1')
@@ -64,8 +88,12 @@ if __name__ == '__main__':
     )
     im2 = Image.open("contextual_explainer/src/Figures/banner.jpeg")
     st.sidebar.image([im2])
-    query = st.sidebar.text_input('CPS :', 'prefix:name')
-    st.sidebar.text(query)
+
+    query = st.sidebar.text_input("Enter name of the entity: ", 'RB30_OG4_61-400_standing_light_1')
+    ontology_prefix = st.sidebar.text_input("Enter the ontology prefix used: ", 'hsg')
+    ontology_uri = st.sidebar.text_input("Enter the ontology uri: ",
+                                         '<http://semantics.interactions.ics.unisg.ch/livingcampus#>')
+
     # date = st.sidebar.date_input('date')
     # st.sidebar.text(date)
     # time = st.sidebar.time_input('time')
@@ -74,7 +102,7 @@ if __name__ == '__main__':
     # st.sidebar.text('Found Keywords:')
     # words = find_keywords(query)
     # st.sidebar.text(words)
-    cps_td, contextual_variables = discover.discover_context()
+    cps_td, contextual_variables = discover.discover_context(ontology_prefix, ontology_uri)
     '''Thing Description found for CPS:'''
     st.write(cps_td)
 
@@ -108,8 +136,8 @@ if __name__ == '__main__':
     if st.sidebar.button('Explain'):
         cf = ex.nice_explain(lambda x: clf.predict_proba(x), X_train, cat_feat, num_feat, y_train,
                              query_instance)
-        visualize_explanation(clf, cf, query_instance, feature_names,
-                              list(Y.columns)[0])  # show a list of names of changed feature
+        visualize_explanation(clf, cf, query_instance, feature_names, ontology_prefix, ontology_uri,
+                              subject=query)  # show a list of names of changed feature
 
         # then check if it is a positive or negative influence i.e. higher for normal or lower for normal.
         # Can we perturb this value to find out the actual threshold on which the behavior changes? If yes then it can also
