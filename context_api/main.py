@@ -11,12 +11,12 @@ client = DataFrameClient(host=config.url, port=config.port, username=config.user
                          database=config.database_name)
 
 
-class Context(Resource):
+class ExplainInfluence(Resource):
     def get(self):
         parser = reqparse.RequestParser()  # initialize
         parser.add_argument('sensorname', required=True)  # add args
         args = parser.parse_args()  # parse arguments to dictionary
-
+        # query based on time SELECT * FROM "absolutismus" WHERE time = '2016-07-31T20:07:00Z' OR time = '2016-07-31T23:07:17Z'
         if args['sensorname'] == 'Sensor0618-humidity':
             result = client.query(
                 'SELECT mean("humidity") FROM "thunderboard_14b4576da75c" WHERE time >= now() - 30d and time <= now() GROUP BY time(1h) fill(null);')
@@ -43,7 +43,7 @@ class Context(Resource):
         return {'data': df.to_json(orient='records', date_format='iso')}, 200  # return data with 200 OK
 
 
-api.add_resource(Context, '/context')  # add endpoints
+api.add_resource(ExplainInfluence, '/influence')  # add endpoints
 
 if __name__ == '__main__':
     app.run()  # run our Flask app
