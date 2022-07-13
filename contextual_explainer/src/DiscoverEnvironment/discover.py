@@ -1,10 +1,13 @@
 from SPARQLWrapper import SPARQLWrapper, JSON, N3, POST
-import config
 from rdflib import Graph
+import configparser
 
-sparql = SPARQLWrapper(config.sparql_endpoint)
+config = configparser.ConfigParser()
+config.read('config.ini')
 
-sparql.setCredentials(config.sparql_username, config.sparql_password)
+sparql = SPARQLWrapper(config['resources']['sparql_endpoint'])
+
+sparql.setCredentials(config['credentials']['sparql_username'], config['credentials']['sparql_password'])
 
 
 def select_relationships(ontology_prefix, ontology_uri, subject, object):
@@ -63,8 +66,8 @@ select ?entity ?type ?count ?rating ?feedback where{
 
 
 def insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object, count, feedback, rating):
-    sparqlpost = SPARQLWrapper(config.sparql_endpoint + "/statements")
-    sparqlpost.setCredentials(config.sparql_username, config.sparql_password)
+    sparqlpost = SPARQLWrapper(config['resources']['sparql_endpoint'] + "/statements")
+    sparqlpost.setCredentials(config['credentials']['sparql_username'], config['credentials']['sparql_password'])
 
     sparqlpost.setQuery(
         """PREFIX %s: %s
@@ -80,16 +83,16 @@ INSERT{
     cd:influenceRating  %s.
     ?m1 san:hasEffect ?o1 .
     %s:%s san:isActedUponBy ?m1 .
-    
+
     } 
-    
+
 WHERE{
     SELECT  ?m1 ?o1
     WHERE{
-    
+
     BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#contextsensor",strUUID())) as ?m1) . 
     BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#contextseffect",strUUID())) as ?o1) .
-    
+
     }
     }	
         """ % (
@@ -103,7 +106,7 @@ WHERE{
     return qres2
 
 
-def discover_context(ontology_prefix, ontology_uri, cps_name=['RB30_OG4_61-400_standing_light_1']):
+def discover_context(ontology_prefix, ontology_uri, cps_name=['RB30_OG4_61-400_standing_lamp_1']):
     """
     Query the context and extract the location and observable contextual variables
 
@@ -171,7 +174,7 @@ def discover_context(ontology_prefix, ontology_uri, cps_name=['RB30_OG4_61-400_s
         ?c a td:thing ;
         td:name ?cpsName ;
         rdfs:label ?label .
-        
+
         FILTER regex(?cpsName, "%s") .
     }""" % cps_name
     )
@@ -189,7 +192,7 @@ def discover_context(ontology_prefix, ontology_uri, cps_name=['RB30_OG4_61-400_s
     PREFIX td: <https://www.w3.org/2019/wot/td#>
     PREFIX hctl: <https://www.w3.org/2019/wot/hypermedia#>
     PREFIX htv: <http://www.w3.org/2011/http#>
-    
+
     select ?roomName ?sensorName ?methodName ?link where {
         ?room a bot:Space ;          
                 rdfs:label ?roomName ;
@@ -203,7 +206,7 @@ def discover_context(ontology_prefix, ontology_uri, cps_name=['RB30_OG4_61-400_s
         ?f a hctl:Form ;
             htv:methodName ?methodName ;
             hctl:hasTarget ?link .
-       
+
         FILTER regex(?roomName, "^%s") .
         }
         """ % location
@@ -222,3 +225,8 @@ def discover_context(ontology_prefix, ontology_uri, cps_name=['RB30_OG4_61-400_s
 
     return location, context_variables
 '''
+
+
+
+
+
