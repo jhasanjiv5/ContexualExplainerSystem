@@ -1,21 +1,15 @@
 import pandas as pd
 import numpy as np
-
+from sklearn.ensemble import IsolationForest
 
 def find_outlier_label(df):
-    upper_threshold = 1
-    lower_threshold = -1
-
-    # Calculate rolling median
-    df['rolling_temp'] = df['Temperatura'].rolling(window=3).median()
-
-    # Calculate difference
-    df['diff'] = df['Temperatura'] - df['rolling_temp']
-
-    #after finding the diff the rows are dropped based on the values of diff compare to threshold
-    # Flag rows to be dropped as `1`
-    df['drop_flag'] = np.where((df['diff'] > upper_threshold) | (df['diff'] < lower_threshold), 1, 0)
-
-    # Drop flagged rows
-    df = df[df['drop_flag'] != 1]
-    df = df.drop(['rolling_temp', 'rolling_temp', 'diff', 'drop_flag'], axis=1)
+    clf=IsolationForest(n_estimators=100, max_samples='auto', contamination=float(.12), max_features=1.0, bootstrap=False, n_jobs=-1, random_state=42, verbose=0)
+    clf.fit(df)
+    df['anomaly']=clf.predict(df)
+    df['anomaly'].replace({-1:0}, inplace=True)
+    # outliers=df.loc[df['anomaly']==-1]
+    # outlier_index=list(outliers.index)
+    #print(outlier_index)
+    #Find the number of anomalies and normal points here points classified -1 are anomalous
+    # print(outlier_index)
+    return df

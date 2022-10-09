@@ -31,24 +31,26 @@ def get_logs(links):
     dfs = pd.DataFrame(data=None)
     try:
         for k, c in links.items():
+            # for using the demo living-campus TDs with 10.2.2.33 address
+            c = c.replace('10.2.2.33','127.0.0.1')
             if '&duration=1' in c:
                 result = requests.get(c + '100')
             else:
                 result = requests.get(c + '&duration=1100')
             # 'SELECT mean("humidity"), mean("temperature"), mean("light"), mean("uvi"), mean("pressure") FROM "thunderboard_086bd7fe10cb" WHERE time >= now() - 30d and time <= now() GROUP BY time(1h) fill(linear);')
-            r = result.json()
-
-            df = pd.DataFrame(data=r)
-            df = df.rename(columns={'value': k})
-            df['time'] = pd.to_datetime(df['time'])
-            if dfs.empty:
-                dfs = df
-            else:
-                dfs = pd.merge_asof(dfs, df, on='time')
-
-
+            if result.status_code == 200:
+                r = result.json()
+                df = pd.DataFrame(data=r)
+                if not df.empty:
+                    df = df.rename(columns={'value': k})
+                    df['time'] = pd.to_datetime(df['time'])
+                    if dfs.empty:
+                        dfs = df
+                    else:
+                        dfs = pd.merge_asof(dfs, df, on='time')
     except Exception as err:
         print(err)
         raise
     print(dfs)
+    dfs.to_csv('data.csv', sep=',')
     return dfs

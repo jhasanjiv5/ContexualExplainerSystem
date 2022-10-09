@@ -20,7 +20,7 @@ def shap_explain(ds, clf, X):
     shap.summary_plot(shap_values[1], X, feature_names=ds.iloc[:, 1:-1].columns)
 
 
-def dice_explain(clf, ds, query_instance):
+def dice_explain(clf, ds, query_instance, features, class_name):
     """
 
     :param clf:
@@ -28,16 +28,15 @@ def dice_explain(clf, ds, query_instance):
     :param query_instance:
     """
     d = dice_ml.Data(dataframe=ds,
-                     continuous_features=['temperature', 'humidity', 'uvi', 'pressure', 'light', 'Temperature',
-                                          'LightLevel'],
-                     outcome_name='r400')
+                     continuous_features=features,
+                     outcome_name=class_name)
     m = dice_ml.Model(model=clf, backend='sklearn')
     exp = dice_ml.Dice(d, m, method="random")
     dice_exp = exp.generate_counterfactuals(query_instance, total_CFs=4, desired_class="opposite",
-                                            features_to_vary=['temperature', 'humidity', 'uvi', 'pressure', 'light'])
-    dice_exp.visualize_as_dataframe()
-    dice_exp.cf_examples_list[0].final_cfs_df.to_csv(path_or_buf='counterfactuals.csv', index=False)
-
+                                            features_to_vary=features)
+    #dice_exp.visualize_as_dataframe()
+    #dice_exp.cf_examples_list[0].final_cfs_df.to_csv(path_or_buf='counterfactuals.csv', index=False)
+    return dice_exp.cf_examples_list[0].final_cfs_df
 
 def nice_explain(predict_fn, X_train, cat_feat, num_feat, y_train, query_instance):
     """

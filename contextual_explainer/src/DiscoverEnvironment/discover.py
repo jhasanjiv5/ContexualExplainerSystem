@@ -3,7 +3,7 @@ from rdflib import Graph
 import configparser
 
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read("contextual_explainer/src/config.ini")
 
 sparql = SPARQLWrapper(config['resources']['sparql_endpoint'])
 
@@ -106,7 +106,7 @@ WHERE{
     return qres2
 
 
-def discover_context(ontology_prefix, ontology_uri, cps_name=['RB30_OG4_61-400_standing_lamp_1']):
+def discover_context(ontology_prefix, ontology_uri, seed, cps_name=['RB30_OG4_61-400_standing_lamp_1']):
     """
     Query the context and extract the location and observable contextual variables
 
@@ -119,8 +119,8 @@ def discover_context(ontology_prefix, ontology_uri, cps_name=['RB30_OG4_61-400_s
             PREFIX brick: <https://brickschema.org/schema/Brick#>
             DESCRIBE ?td where
             {
-            %s:%s %s:hasTD ?td
-            }""" % (ontology_prefix, ontology_uri, ontology_prefix, c, ontology_prefix)
+            %s:%s %s:%s ?td
+            }""" % (ontology_prefix, ontology_uri, ontology_prefix, c, ontology_prefix, seed)
 
         )
         cps_td = ''
@@ -132,16 +132,17 @@ def discover_context(ontology_prefix, ontology_uri, cps_name=['RB30_OG4_61-400_s
         data = g.serialize(format='n3')
         cps_td = data.split("\n\n")[1].split('"')[1]
         # TODO: can we use select instead of describe for sparql query? td link extraction would be easier. Perhaps add title to the instances and then select instances based on titles. it would return JSON and then easier to extract the TD link.
-        print(cps_td)
-
+        # TODO: ask users for context relationship like hasTD
+        # TODO: solve error that includes kims lamp. it gives an opportunity to filter on expeected terms in any data stream. Update error info to say exactly that 
         sparql.setQuery(
             """PREFIX %s: %s
             PREFIX brick: <https://brickschema.org/schema/Brick#>
             select ?TD{
-                ?room brick:regulates %s:%s ;
-                      (brick:hasPoint|brick:hasPart|hsg:hasTD|brick:hasLocation)* ?TD .   
+                %s:%s brick:hasLocation ?loc .
+                ?things brick:hasLocation ?loc;
+                                   hsg:%s ?TD .  
             }	
-            """ % (ontology_prefix, ontology_uri, ontology_prefix, c)
+            """ % (ontology_prefix, ontology_uri, ontology_prefix, c, seed)
         )
 
         sparql.setReturnFormat(JSON)
