@@ -39,6 +39,6 @@ def predict_ir(X_train, X_test, y_train, y_test, num_feat, cat_feat):
     from sklearn.metrics import accuracy_score
     from sklearn.metrics import precision_score
     acc = accuracy_score(y_test, y_pred)
-    prec = precision_score(y_test, y_pred)
-    print("Accuraccy:{} \nPrecision:{}".format(acc, prec))
+    
+    print("Accuraccy:{} ".format(acc))
     return clf

@@ -5,7 +5,7 @@ from nice import NICE
 from tabulate import tabulate
 
 
-def shap_explain(ds, clf, X):
+def shap_explain(ds, clf, X, class_name):
     """
 
     :param ds:
@@ -14,7 +14,7 @@ def shap_explain(ds, clf, X):
     """
     explainer = shap.TreeExplainer(clf)
     shap_values = explainer.shap_values(X)
-    class_names = ds['machine_status'].unique()
+    class_names = ds[class_name].unique()
     bar_plot = shap.summary_plot(shap_values, X, plot_type="bar", class_names=class_names,
                                  feature_names=ds.iloc[:, 1:-1].columns)
     shap.summary_plot(shap_values[1], X, feature_names=ds.iloc[:, 1:-1].columns)

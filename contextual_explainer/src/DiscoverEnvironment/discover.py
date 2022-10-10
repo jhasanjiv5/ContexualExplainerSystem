@@ -12,45 +12,55 @@ sparql.setCredentials(config['credentials']['sparql_username'], config['credenti
 
 def select_relationships(ontology_prefix, ontology_uri, subject, object):
     sparql.setQuery(
-        """PREFIX %s: %s
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX san: <http://www.irit.fr/recherches/MELODI/ontologies/SAN#>
-PREFIX cd: <https://things.interactions.ics.unisg.ch#>
-select ?type where{
-    %s:%s ?t ?a .
-    ?a rdf:type %s:%s ;
-       san:hasEffect ?effect .
-    ?effect rdf:type ?type ;
-            cd:observationCount ?count .
-} """ % (ontology_prefix, ontology_uri, ontology_prefix, subject, ontology_prefix, object)
+        """ PREFIX brick: <https://brickschema.org/schema/Brick#>
+            PREFIX prov: <http://www.w3.org/ns/prov#>
+            PREFIX %s: %s
+            PREFIX cd: <https://things.interactions.ics.unisg.ch#>
+            select ?influence_type ?rating 
+            where{
+                ?influence a prov:Entity ;
+               a %s:%s .
+                %s:%s brick:hasTag ?t1 .
+                ?entity a prov:Entity;
+                prov:wasInfluencedBy ?influence;
+                prov:qualifiedInfluence [ 
+                a prov:EntityInfluence ; prov:influencer ?m1 ; cd:influenceType ?influence_type ;  cd:rating ?rating ;] .
+                } 
+            """ % (ontology_prefix, ontology_uri, ontology_prefix, object, ontology_prefix, subject)
     )
-    found_relationships = []
+    found_relationships = {}
+    count = 0
     sparql.setReturnFormat(JSON)
     qres2 = sparql.query().convert()
     for r in qres2['results']['bindings']:
-        data = []
+        data = {}
         for i in r:
-            data.append(r[i]['value'])
-        found_relationships.append(data)
+            data.update({i:r[i]['value']})
+        found_relationships.update({count: data})
+        count += 1
     return found_relationships
 
 
 def show_effects(ontology_prefix, ontology_uri, subject):
     sparql.setQuery(
-        """PREFIX %s: %s
-PREFIX brick: <https://brickschema.org/schema/Brick#>
-PREFIX cd: <https://things.interactions.ics.unisg.ch#>
-PREFIX san: <http://www.irit.fr/recherches/MELODI/ontologies/SAN#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-select ?entity ?type ?count ?rating ?feedback where{
-    %s:%s san:isActedUponBy ?e .
-    ?e rdf:type ?entity ;
-       san:hasEffect ?effect .
-    ?effect rdf:type ?type ;
-            cd:observationCount ?count ;
-    	cd:textualFeedback ?feedback ;
-        cd:influenceRating ?rating .
-} """ % (ontology_prefix, ontology_uri, ontology_prefix, subject)
+        """ PREFIX brick: <https://brickschema.org/schema/Brick#>
+            PREFIX prov: <http://www.w3.org/ns/prov#>
+            PREFIX %s: %s
+            PREFIX cd: <https://things.interactions.ics.unisg.ch#>
+            select ?entity ?influence ?influence_type ?rating ?feedback
+            where{
+                ?influence a prov:Entity .
+                %s:%s brick:hasTag ?t1 .
+                ?entity a prov:Entity;
+                prov:wasInfluencedBy ?influence;
+                prov:qualifiedInfluence [ 
+                a prov:EntityInfluence ; 
+                prov:influencer ?influence ;
+                cd:influenceType ?influence_type ; 
+                cd:rating ?rating ;
+                cd:textualFeedback ?feedback ; ] .
+                } 
+        """ % (ontology_prefix, ontology_uri, ontology_prefix, subject)
     )
     found_relationships = {}
     sparql.setReturnFormat(JSON)
@@ -65,39 +75,41 @@ select ?entity ?type ?count ?rating ?feedback where{
     return found_relationships
 
 
-def insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object, count, feedback, rating):
+def insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object, count, feedback, rating, feature):
     sparqlpost = SPARQLWrapper(config['resources']['sparql_endpoint'] + "/statements")
     sparqlpost.setCredentials(config['credentials']['sparql_username'], config['credentials']['sparql_password'])
 
     sparqlpost.setQuery(
-        """PREFIX %s: %s
-PREFIX brick: <https://brickschema.org/schema/Brick#>
-PREFIX cd: <https://things.interactions.ics.unisg.ch#>
-PREFIX san: <http://www.irit.fr/recherches/MELODI/ontologies/SAN#>
+        """ PREFIX brick: <https://brickschema.org/schema/Brick#>
+            PREFIX prov: <http://www.w3.org/ns/prov#>
+            PREFIX %s: %s
+            PREFIX cd: <https://things.interactions.ics.unisg.ch#>
 
-INSERT{ 
-    ?m1 a %s:%s .
-    ?o1 a cd:%s ;
-    cd:observationCount %s ;
-    cd:textualFeedback "%s";
-    cd:influenceRating  %s.
-    ?m1 san:hasEffect ?o1 .
-    %s:%s san:isActedUponBy ?m1 .
-
-    } 
-
-WHERE{
-    SELECT  ?m1 ?o1
-    WHERE{
-
-    BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#contextsensor",strUUID())) as ?m1) . 
-    BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#contextseffect",strUUID())) as ?o1) .
-
-    }
-    }	
-        """ % (
-            ontology_prefix, ontology_uri, ontology_prefix, object, predicate, count, feedback, rating, ontology_prefix,
-            subject)
+            INSERT{ 
+                ?m1 a %s:%s ;
+                    a prov:Entity .
+                %s:%s brick:hasTag ?t1 .
+                ?t1 a %s:%s ;
+                a prov:Entity ;
+                prov:wasInfluencedBy ?m1 ;
+                prov:qualifiedInfluence [ 
+                a prov:EntityInfluence ; 
+                prov:influencer ?m1 ;
+                cd:influenceType "%s" ;
+                cd:rating %s ;
+                cd:textualFeedback "%s" ; ] .
+                } 
+                
+            WHERE{
+                SELECT  ?m1 ?t1
+                WHERE{
+                BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#context",
+                strUUID())) as ?m1) .
+                BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#context",
+                strUUID())) as ?t1) .
+                }
+            }
+            """ % (ontology_prefix, ontology_uri, ontology_prefix, object, ontology_prefix, subject, ontology_prefix, feature, predicate, rating, feedback )
 
     )
     sparqlpost.setMethod(POST)

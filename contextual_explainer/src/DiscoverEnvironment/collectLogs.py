@@ -51,6 +51,6 @@ def get_logs(links):
     except Exception as err:
         print(err)
         raise
-    print(dfs)
+    dfs.fillna(0, inplace=True)
     dfs.to_csv('data.csv', sep=',')
     return dfs
