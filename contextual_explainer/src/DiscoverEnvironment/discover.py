@@ -143,9 +143,7 @@ def discover_context(ontology_prefix, ontology_uri, seed, cps_name=['RB30_OG4_61
         g.parse(data=qres1, format="n3")
         data = g.serialize(format='n3')
         cps_td = data.split("\n\n")[1].split('"')[1]
-        # TODO: can we use select instead of describe for sparql query? td link extraction would be easier. Perhaps add title to the instances and then select instances based on titles. it would return JSON and then easier to extract the TD link.
-        # TODO: ask users for context relationship like hasTD
-        # TODO: solve error that includes kims lamp. it gives an opportunity to filter on expeected terms in any data stream. Update error info to say exactly that 
+        #TODO: store the ontology prefixes of all the variables 
         sparql.setQuery(
             """PREFIX %s: %s
             PREFIX brick: <https://brickschema.org/schema/Brick#>

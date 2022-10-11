@@ -74,10 +74,12 @@ def visualize_explanation(clf, cf, query_instance, feature_names, ontology_prefi
             unique, counts = np.unique(influence_type_array, return_counts=True)
             print(np.column_stack((unique, counts)))
             
+            
             rating_dict ={}
             for b in ['positiveInfluence', 'negativeInfluence']:
                 sum = 0
                 for a in rel_exist:
+
                     if rel_exist[a]['influence_type'] == b:
                         sum += int(rel_exist[a]['rating'])
                 rating_dict.update({b:sum/len(rel_exist)})        
@@ -197,7 +199,7 @@ def run_explanation_system():
     #ex.shap_explain(sensors, clf, X, class_names)
     
     #dice explainer
-    cf1 = ex.dice_explain(clf, sensors, pd.DataFrame(query_instance, columns=feature_names), feature_names, class_names)
+    cf1 = ex.dice_explain(clf, sensors.iloc[:,:], pd.DataFrame(query_instance, columns=feature_names), feature_names, class_names)
     
     #ask users to choose the countefactual
     if cf is not None:
