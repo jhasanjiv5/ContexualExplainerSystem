@@ -25,7 +25,7 @@ def train_model(X_train, X_test, y_train, y_test, num_feat, cat_feat):
             ('num', StandardScaler(), num_feat),
             ('cat', OneHotEncoder(handle_unknown='ignore'), cat_feat)])),
         ('RF', RandomForestClassifier())])
-    clf = clf.fit(X_train, y_train)
+    clf.fit(X_train, y_train)
     return clf
 
 

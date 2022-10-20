@@ -45,9 +45,9 @@ def visualize_explanation(clf, cf, query_instance, feature_names, ontology_prefi
     print(tabulate(cf, headers=feature_names, tablefmt='pretty', missingval='N/A'))
     print('List of causally relevant features:')
     related_features = []
-    diff = np.where(cf != query_instance)[1]
-    low_diff = np.where(cf < query_instance)[1]
-    high_diff = np.where(cf > query_instance)[1]
+    diff = np.where(np.array(cf) != np.array(query_instance))[1]
+    low_diff = np.where(np.array(cf) < np.array(query_instance))[1]
+    high_diff = np.where(np.array(cf) > np.array(query_instance))[1]
 
     for i in diff:
         related_features.append(feature_names[i])
@@ -103,15 +103,6 @@ def visualize_explanation(clf, cf, query_instance, feature_names, ontology_prefi
             discover.insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object, 1,
                                             feedback, rating, feature)
 
-    # show explanation for top related feature instead of selection box for simplicity
-
-    print('''Existing Contextual Influences for {}'''.format(subject))
-    effects_data = discover.show_effects(ontology_prefix, ontology_uri, subject)
-    df = pd.DataFrame(effects_data).T
-    df.fillna(0, inplace=True)
-    print(df)
-    plt.figure(figsize=(16, 8), dpi=150)
-
     return related_features
 
 
@@ -124,12 +115,22 @@ def run_explanation_system():
         '''
     )
     print("---------Query-------------")
-    query = input("Enter name of the entity: ")
-    class_name_input = input("Enter feature name for finding influence:")
+    query = input("Enter name of the entity: ") or "RB30_OG4_61-400_standing_lamp_1"
+    class_name_input = input("Enter feature name for finding influence:")  or "lightPowerStatus"
+    selected_datetime = input("Enter datetime of query instance: ") or "2022-01-01T00:00:00Z" 
     print("---------Context Discovery-")
-    ontology_prefix = input("Enter the ontology prefix used: ")
-    ontology_uri = input("Enter the ontology uri: ")
-    seed = input("Enter the relationship name to discover the Thing Descriprions: ")
+    ontology_prefix = input("Enter the ontology prefix used: ") or "hsg"
+    ontology_uri = input("Enter the ontology uri: ") or "<http://semantics.interactions.ics.unisg.ch/livingcampus#>"
+    seed = input("Enter the relationship name to discover the Thing Descriprions: ") or "hasTD"
+    #show existing relationships
+    
+    print('''Existing Contextual Influences for {}'''.format(query))
+    effects_data = discover.show_effects(ontology_prefix, ontology_uri, query)
+    df = pd.DataFrame(effects_data).T
+    df.fillna(0, inplace=True)
+    print(df)
+    
+    
     # start gathering thing descriptions 
     cps_td, contextual_variables = discover.discover_context(ontology_prefix, ontology_uri, seed, [query])
     print("Thing Description found for CPS:")
@@ -141,7 +142,7 @@ def run_explanation_system():
     # start collecting data
     links = collectLogs.get_links(cps_td, contextual_variables)
     dfs = collectLogs.get_logs(links)
-   
+    print(dfs.head())
     ## check if the colims have numeric values for correlation
     is_numeric_ds = dfs.apply(lambda s: pd.to_numeric(s, errors='coerce').notnull().all())
     corr = []
@@ -162,49 +163,51 @@ def run_explanation_system():
                 corr_dict[variable_name] = correlation_value
     for feature in corr_dict:
         print("Selected feature {} has CorrCoef {}.".format(feature, corr_dict[feature]))
-    
-    sensors = corr_ds[corr_dict.keys()]
-    ##### for demo data only
-    sensors.loc[sensors.lightPowerStatus > 0, 'lightPowerStatus'] = 1
+    columns = [a for a in corr_dict.keys()]
+    sensors = corr_ds[columns]
     print(sensors.head())
-    selected_datetime = input("Enter datetime of query instance: ")
+    class_names = class_name_input+'Class'
+    sensors[class_names] = np.where(sensors[class_name_input]> 0, 'On', 'Off')
     # correlate.check_for_correlation(sensors)  # select features based of the correlation values
-    X = sensors.loc[:, sensors.columns != class_name_input]
-    y = sensors.loc[:, class_name_input]
+    X = sensors.loc[:, sensors.columns != class_names]
+    y = sensors.loc[:, class_names]
     feature_names = list(X.columns)
     X_values = X.values  # only supports arrays atm
     y_values = y.values
-    class_names = class_name_input #y.name
+    #y.name
     cat_feat = []
     lab = preprocessing.LabelEncoder()
     y_transformed = lab.fit_transform(y_values)
+    
     num_feat = list(np.arange(len(feature_names)))
     X_train, X_test, y_train, y_test = train_test_split(X_values, y_transformed, test_size=0.2, random_state=20)
     #TODO: ask users to select continuous data columns for training purpose
     clf = cl.predict_ir(X_train, X_test, y_train, y_test, num_feat, cat_feat)
     # query_instance = X_test[0:1]
     timestamp = corr_ds.columns[corr_ds.columns.isin(['time','timestamp'])][0]
-    query_instance = sensors.loc[corr_ds[timestamp] == selected_datetime, feature_names].values
-    
+
+    query_instance = sensors.loc[corr_ds[timestamp] == selected_datetime, feature_names]
+    query_instance = query_instance.iloc[:,:]
+    print(query_instance)
     print('Model Prediction:')
     print(clf.predict(query_instance))
 
     print('Query Instance:')
     print(tabulate(query_instance, headers=feature_names, tablefmt='pretty', missingval='N/A'))
 
-    cf = ex.nice_explain(lambda x: clf.predict_proba(x), X_train, cat_feat, num_feat, y_train,
-                         query_instance)
-    print(cf)
+    
     #shap explainer
-    #ex.shap_explain(sensors, clf, X, class_names)
+    
+    #ex.shap_explain(sensors, clf.predict, X_test[0:1000, :], class_names, X_train, feature_names)
     
     #dice explainer
-    cf1 = ex.dice_explain(clf, sensors.iloc[:,:], pd.DataFrame(query_instance, columns=feature_names), feature_names, class_names)
+    cf = ex.dice_explain(clf, sensors.iloc[:,:], query_instance, feature_names, class_names)
+    print(cf)
     
     #ask users to choose the countefactual
     if cf is not None:
-        #cf_select = input('Select an index from the presented counterfactual based on feasibility and actionability of it:')
-        visualize_explanation(clf, cf, query_instance, feature_names, ontology_prefix, ontology_uri, subject=query, feature = class_names)
+        cf_select = int(input('Select an index from the presented counterfactual based on feasibility and actionability of it:'))
+        visualize_explanation(clf, cf.loc[[cf_select], feature_names], query_instance, feature_names, ontology_prefix, ontology_uri, subject=query, feature = class_name_input)
 
 
 if __name__ == '__main__':

@@ -47,18 +47,25 @@ def show_effects(ontology_prefix, ontology_uri, subject):
             PREFIX prov: <http://www.w3.org/ns/prov#>
             PREFIX %s: %s
             PREFIX cd: <https://things.interactions.ics.unisg.ch#>
-            select ?entity ?influence ?influence_type ?rating ?feedback
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            select ?influence ?influence_type ?feature ?rating ?feedback
             where{
-                ?influence a prov:Entity .
+               
                 %s:%s brick:hasTag ?t1 .
-                ?entity a prov:Entity;
-                prov:wasInfluencedBy ?influence;
-                prov:qualifiedInfluence [ 
-                a prov:EntityInfluence ; 
-                prov:influencer ?influence ;
-                cd:influenceType ?influence_type ; 
-                cd:rating ?rating ;
-                cd:textualFeedback ?feedback ; ] .
+    
+                ?i a prov:Entity ;
+                   rdfs:label ?influence .
+    			
+    			?t1 rdfs:label ?feature ;
+                			a prov:Entity;
+                			prov:wasInfluencedBy ?i;
+                            prov:qualifiedInfluence [ 
+                            a prov:EntityInfluence ; 
+                            prov:influencer ?i ;
+                            cd:influenceType ?influence_type ; 
+                            cd:rating ?rating ;
+                            cd:textualFeedback ?feedback ; ] .
+
                 } 
         """ % (ontology_prefix, ontology_uri, ontology_prefix, subject)
     )
@@ -84,12 +91,15 @@ def insert_relationship(ontology_prefix, ontology_uri, subject, predicate, objec
             PREFIX prov: <http://www.w3.org/ns/prov#>
             PREFIX %s: %s
             PREFIX cd: <https://things.interactions.ics.unisg.ch#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
             INSERT{ 
                 ?m1 a %s:%s ;
-                    a prov:Entity .
+                    a prov:Entity ;
+                    rdfs:label '%s' .
                 %s:%s brick:hasTag ?t1 .
                 ?t1 a %s:%s ;
+                    rdfs:label '%s' ;
                 a prov:Entity ;
                 prov:wasInfluencedBy ?m1 ;
                 prov:qualifiedInfluence [ 
@@ -101,15 +111,14 @@ def insert_relationship(ontology_prefix, ontology_uri, subject, predicate, objec
                 } 
                 
             WHERE{
-                SELECT  ?m1 ?t1
-                WHERE{
+               
                 BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#context",
                 strUUID())) as ?m1) .
                 BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#context",
                 strUUID())) as ?t1) .
-                }
+                
             }
-            """ % (ontology_prefix, ontology_uri, ontology_prefix, object, ontology_prefix, subject, ontology_prefix, feature, predicate, rating, feedback )
+            """ % (ontology_prefix, ontology_uri, ontology_prefix, object, object, ontology_prefix, subject, ontology_prefix, feature, feature, predicate, rating, feedback )
 
     )
     sparqlpost.setMethod(POST)
