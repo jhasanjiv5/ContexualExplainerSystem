@@ -53,4 +53,5 @@ def get_logs(links):
         raise
     dfs.fillna(0, inplace=True)
     dfs.to_csv('data.csv', sep=',')
+    # dfs = pd.read_csv('data.csv', sep=',')
     return dfs

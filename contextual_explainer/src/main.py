@@ -43,65 +43,68 @@ def visualize_explanation(clf, cf, query_instance, feature_names, ontology_prefi
 
     print('Counterfactuals:')
     print(tabulate(cf, headers=feature_names, tablefmt='pretty', missingval='N/A'))
-    print('List of causally relevant features:')
+    print('List of contextual influences:')
     related_features = []
     diff = np.where(np.array(cf) != np.array(query_instance))[1]
     low_diff = np.where(np.array(cf) < np.array(query_instance))[1]
     high_diff = np.where(np.array(cf) > np.array(query_instance))[1]
 
     for i in diff:
-        related_features.append(feature_names[i])
+        if(feature_names[i]!=feature):
+            related_features.append(feature_names[i])
 
     explain_graph(related_features)
 
     for i in diff:
-        if i in low_diff:
-            predicate = 'negativeInfluence'
-            object = feature_names[i]
-        if i in high_diff:
-            predicate = 'positiveInfluence'
-            object = feature_names[i]
-        print(object + ' has ' + predicate + ' on ' + feature + ' of '+ subject)
-        
-        rel_exist = discover.select_relationships(ontology_prefix, ontology_uri, subject, object)
-        if len(rel_exist)>0:
-            print('''Following are the preserved influences between {} and {}'''.format(subject, object))
-            influence_type_array =[]
-            for rel in rel_exist:
-                influence_type_array.append(rel_exist[rel]['influence_type'])
+        if (feature_names[i]!=feature):
+            if i in low_diff:
+                predicate = 'negativeInfluence'
+                object = feature_names[i]
+            if i in high_diff:
+                predicate = 'positiveInfluence'
+                object = feature_names[i]
+            
+            print(object + ' has ' + predicate + ' on ' + feature + ' of '+ subject)
+            
+            rel_exist = discover.select_relationships(ontology_prefix, ontology_uri, subject, object)
+            if len(rel_exist)>0:
+                print('''Following are the preserved influences between {} and {}'''.format(subject, object))
+                influence_type_array =[]
+                for rel in rel_exist:
+                    influence_type_array.append(rel_exist[rel]['influence_type'])
+                    
+                    
+                unique, counts = np.unique(influence_type_array, return_counts=True)
+                print(np.column_stack((unique, counts)))
                 
                 
-            unique, counts = np.unique(influence_type_array, return_counts=True)
-            print(np.column_stack((unique, counts)))
-            
-            
-            rating_dict ={}
-            for b in ['positiveInfluence', 'negativeInfluence']:
-                sum = 0
-                for a in rel_exist:
+                rating_dict ={}
+                for b in ['positiveInfluence', 'negativeInfluence']:
+                    sum = 0
+                    for a in rel_exist:
 
-                    if rel_exist[a]['influence_type'] == b:
-                        sum += int(rel_exist[a]['rating'])
-                rating_dict.update({b:sum/len(rel_exist)})        
-            print('Average ratings:{}'.format(rating_dict))
+                        if rel_exist[a]['influence_type'] == b:
+                            sum += int(rel_exist[a]['rating'])
+                    rating_dict.update({b:sum/len(rel_exist)})        
+                print('Average ratings:{}'.format(rating_dict))
 
-            feedback = input('Add your feedback: ')
-            answer_given = input('Do you agree with found relationship? yes/no: ')
-            rating = 0
-            if answer_given.lower() == 'yes':
-                rating = 1
-            
-            discover.insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object,
-                                                len(rel_exist),
+                feedback = input('Add your feedback: ')
+                answer_given = input('Do you agree with found relationship? yes/no: ')
+                rating = 0
+                if answer_given.lower() == 'yes':
+                    rating = 1
+                
+                discover.insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object,
+                                                    len(rel_exist),
+                                                    feedback, rating, feature)
+            else:
+                feedback = input('Add your feedback: ')
+                answer_given = input('Do you agree with found relationship? yes/no: ')
+                rating = 0
+                if answer_given.lower() == 'yes':
+                    rating = 1
+                discover.insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object, 1,
                                                 feedback, rating, feature)
-        else:
-            feedback = input('Add your feedback: ')
-            answer_given = input('Do you agree with found relationship? yes/no: ')
-            rating = 0
-            if answer_given.lower() == 'yes':
-                rating = 1
-            discover.insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object, 1,
-                                            feedback, rating, feature)
 
     return related_features
 
@@ -167,7 +170,7 @@ def run_explanation_system():
     sensors = corr_ds[columns]
     print(sensors.head())
     class_names = class_name_input+'Class'
-    sensors[class_names] = np.where(sensors[class_name_input]> 0, 'On', 'Off')
+    sensors[class_names] = np.where(sensors[class_name_input]> 0.5, 'High', 'Low')
     # correlate.check_for_correlation(sensors)  # select features based of the correlation values
     X = sensors.loc[:, sensors.columns != class_names]
     y = sensors.loc[:, class_names]
