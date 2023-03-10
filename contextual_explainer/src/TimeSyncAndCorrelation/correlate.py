@@ -12,8 +12,7 @@ def check_for_correlation(base, variable):
     :param base:
     :param variable:
     """
-    
-    return np.corrcoef(base, variable)[0,1]
-        
+
+    return np.corrcoef(base, variable)[0, 1]
 
     # todo: check if the function works for more than two serieses.

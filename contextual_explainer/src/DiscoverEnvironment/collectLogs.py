@@ -18,12 +18,12 @@ def get_links(cps_td, context_variables):
             links.update({
                 i: r['properties'][i]['forms'][0]['href']})
 
-    return links
+        return links
 
 
 def get_logs(links):
     """
-    Query the context and create a common data frame out of gathered data
+    Query the context and create a common data frame from gathered data
 
     :param links: list of links to logs
     :return: object (collective data frame)
@@ -32,7 +32,7 @@ def get_logs(links):
     try:
         for k, c in links.items():
             # for using the demo living-campus TDs with 10.2.2.33 address
-            c = c.replace('10.2.2.33','127.0.0.1')
+            c = c.replace('10.2.2.33', '127.0.0.1')
             if '&duration=1' in c:
                 result = requests.get(c + '100')
             else:

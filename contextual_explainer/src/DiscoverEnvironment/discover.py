@@ -7,7 +7,8 @@ config.read("contextual_explainer/src/config.ini")
 
 sparql = SPARQLWrapper(config['resources']['sparql_endpoint'])
 
-sparql.setCredentials(config['credentials']['sparql_username'], config['credentials']['sparql_password'])
+sparql.setCredentials(config['credentials']['sparql_username'],
+                      config['credentials']['sparql_password'])
 
 
 def select_relationships(ontology_prefix, ontology_uri, subject, object):
@@ -35,7 +36,7 @@ def select_relationships(ontology_prefix, ontology_uri, subject, object):
     for r in qres2['results']['bindings']:
         data = {}
         for i in r:
-            data.update({i:r[i]['value']})
+            data.update({i: r[i]['value']})
         found_relationships.update({count: data})
         count += 1
     return found_relationships
@@ -83,8 +84,10 @@ def show_effects(ontology_prefix, ontology_uri, subject):
 
 
 def insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object, count, feedback, rating, feature):
-    sparqlpost = SPARQLWrapper(config['resources']['sparql_endpoint'] + "/statements")
-    sparqlpost.setCredentials(config['credentials']['sparql_username'], config['credentials']['sparql_password'])
+    sparqlpost = SPARQLWrapper(
+        config['resources']['sparql_endpoint'] + "/statements")
+    sparqlpost.setCredentials(
+        config['credentials']['sparql_username'], config['credentials']['sparql_password'])
 
     sparqlpost.setQuery(
         """ PREFIX brick: <https://brickschema.org/schema/Brick#>
@@ -118,7 +121,7 @@ def insert_relationship(ontology_prefix, ontology_uri, subject, predicate, objec
                 strUUID())) as ?t1) .
                 
             }
-            """ % (ontology_prefix, ontology_uri, ontology_prefix, object, object, ontology_prefix, subject, ontology_prefix, feature, feature, predicate, rating, feedback )
+            """ % (ontology_prefix, ontology_uri, ontology_prefix, object, object, ontology_prefix, subject, ontology_prefix, feature, feature, predicate, rating, feedback)
 
     )
     sparqlpost.setMethod(POST)
@@ -137,11 +140,10 @@ def discover_context(ontology_prefix, ontology_uri, seed, cps_name=['RB30_OG4_61
     for c in cps_name:
         sparql.setQuery(
             """PREFIX %s: %s
-            PREFIX brick: <https://brickschema.org/schema/Brick#>
             DESCRIBE ?td where
             {
-            %s:%s %s:%s ?td
-            }""" % (ontology_prefix, ontology_uri, ontology_prefix, c, ontology_prefix, seed)
+            %s:%s %s:hasTD ?td
+            }""" % (ontology_prefix, ontology_uri, ontology_prefix, c, ontology_prefix)
 
         )
         cps_td = ''
@@ -152,16 +154,16 @@ def discover_context(ontology_prefix, ontology_uri, seed, cps_name=['RB30_OG4_61
         g.parse(data=qres1, format="n3")
         data = g.serialize(format='n3')
         cps_td = data.split("\n\n")[1].split('"')[1]
-        #TODO: store the ontology prefixes of all the variables 
+        # TODO: store the ontology prefixes of all the variables
         sparql.setQuery(
             """PREFIX %s: %s
             PREFIX brick: <https://brickschema.org/schema/Brick#>
             select ?TD{
-                %s:%s brick:hasLocation ?loc .
-                ?things brick:hasLocation ?loc;
-                                   hsg:%s ?TD .  
+                %s:%s brick:%s ?loc .
+                ?things brick:%s ?loc;
+                                   hsg:hasTD ?TD .  
             }	
-            """ % (ontology_prefix, ontology_uri, ontology_prefix, c, seed)
+            """ % (ontology_prefix, ontology_uri, ontology_prefix, c, seed, seed)
         )
 
         sparql.setReturnFormat(JSON)
@@ -245,8 +247,3 @@ def discover_context(ontology_prefix, ontology_uri, seed, cps_name=['RB30_OG4_61
 
     return location, context_variables
 '''
-
-
-
-
-

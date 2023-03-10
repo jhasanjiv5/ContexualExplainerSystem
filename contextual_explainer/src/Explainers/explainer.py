@@ -14,7 +14,8 @@ def shap_explain(ds, clf, X, class_name, X_train, feature_names):
     """
     explainer = shap.Explainer(clf, X_train)
     shap_values = explainer(X)
-    shap.summary_plot(shap_values.values, X, plot_type="bar", class_names=class_name, feature_names=feature_names)
+    shap.summary_plot(shap_values.values, X, plot_type="bar",
+                      class_names=class_name, feature_names=feature_names)
 
 
 def dice_explain(clf, ds, query_instance, features, class_name):
@@ -29,10 +30,11 @@ def dice_explain(clf, ds, query_instance, features, class_name):
                      outcome_name=class_name)
     m = dice_ml.Model(model=clf, backend='sklearn')
     exp = dice_ml.Dice(d, m, method="random")
-    dice_exp = exp.generate_counterfactuals(query_instance, total_CFs=5, features_to_vary= ['lightPowerStatus' , 'Temperature',  'LightLevel',  'temperature',  'humidity'], desired_class="opposite")
-    #dice_exp.visualize_as_dataframe()
+    dice_exp = exp.generate_counterfactuals(query_instance, total_CFs=5, features_to_vary=features, desired_class="opposite")
+    # dice_exp.visualize_as_dataframe()
     #dice_exp.cf_examples_list[0].final_cfs_df.to_csv(path_or_buf='counterfactuals.csv', index=False)
     return dice_exp.cf_examples_list[0].final_cfs_df
+
 
 def nice_explain(predict_fn, X_train, cat_feat, num_feat, y_train, query_instance):
     """
