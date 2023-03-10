@@ -29,10 +29,14 @@ def find_keywords(query):
     return message_keywords_lower
 
 # Create a grpah to expalin the relationships
+
+
 def explain_graph(option):
     print(option)
 
-# Interactively visualize the explanations 
+# Interactively visualize the explanations
+
+
 def visualize_explanation(clf, cf, query_instance, feature_names, ontology_prefix, ontology_uri, subject=None, feature=None):
 
     predicate = None
@@ -113,7 +117,9 @@ def visualize_explanation(clf, cf, query_instance, feature_names, ontology_prefi
 
     return related_features
 
-# 
+#
+
+
 def run_explanation_system():
     print(
         '''
@@ -202,7 +208,8 @@ def run_explanation_system():
     # TODO: ask users to select continuous data columns for training purpose
     clf = cl.predict_ir(X_train, X_test, y_train, y_test, num_feat, cat_feat)
     cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
-    n_scores = cross_val_score(clf, X, y, scoring='accuracy', cv=cv, n_jobs=-1, error_score='raise')
+    n_scores = cross_val_score(
+        clf, X, y, scoring='accuracy', cv=cv, n_jobs=-1, error_score='raise')
     # report performance
     print('Accuracy: %.3f (%.3f)' % (mean(n_scores), std(n_scores)))
     # query_instance = X_test[0:1]
