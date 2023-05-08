@@ -28,13 +28,13 @@
    Contextual Explanation System
 
    ---------Query-------------
-   Enter name of the entity: RB30_OG4_61-400_standing_lamp_1
+   Enter name of the entity: example_standing_lamp_1
    Enter feature name for finding influence: lightPowerStatus
    Enter datetime of query instance: 2022-01-01T00:00:00Z
 
    ---------Context Discovery-
    Enter the ontology prefix used: hsg
-   Enter the ontology uri: <http://semantics.interactions.ics.unisg.ch/livingcampus#>
+   Enter the ontology uri: <http://../livingcampus#>
    Enter the relationship name to discover the Thing Descriprions: hasLocation
 
    Surrogate model accuracy: 98.93%
