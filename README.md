@@ -1,6 +1,6 @@
 # Actionable Contextual Explanation System (ACES)
 
-![1683203549113](image/README/1683203549113.png)
+![1683203549113](image/README/Contextual_Explainer_System.drawio.png)
 
 1. Setup the context and knowledge base
 
