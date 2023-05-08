@@ -38,8 +38,6 @@ def get_logs(links):
     dfs = pd.DataFrame(data=None)
     try:
         for k, c in links.items():
-            # for using the demo living-campus TDs with 10.2.2.33 address
-            c = c.replace('10.2.2.33', '127.0.0.1')
             if '&duration=1' in c:
                 result = requests.get(c)
             else:

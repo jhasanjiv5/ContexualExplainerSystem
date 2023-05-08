@@ -130,7 +130,7 @@ def insert_relationship(ontology_prefix, ontology_uri, subject, predicate, objec
     return qres2
 
 
-def discover_context(ontology_prefix, ontology_uri, seed, cps_name=['RB30_OG4_61-400_standing_lamp_1']):
+def discover_context(ontology_prefix, ontology_uri, seed, cps_name=['ex_lamp_1']):
     """
     Query the context and extract the location and observable contextual variables
 
@@ -161,7 +161,7 @@ def discover_context(ontology_prefix, ontology_uri, seed, cps_name=['RB30_OG4_61
             select ?TD{
                 %s:%s brick:%s ?loc .
                 ?things brick:%s ?loc;
-                                   hsg:hasTD ?TD .  
+                                   ex:hasTD ?TD .  
             }	
             """ % (ontology_prefix, ontology_uri, ontology_prefix, c, seed, seed)
         )
