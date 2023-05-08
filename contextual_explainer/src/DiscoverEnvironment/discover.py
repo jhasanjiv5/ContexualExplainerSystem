@@ -7,50 +7,68 @@ config.read("contextual_explainer/src/config.ini")
 
 sparql = SPARQLWrapper(config['resources']['sparql_endpoint'])
 
-sparql.setCredentials(config['credentials']['sparql_username'], config['credentials']['sparql_password'])
+sparql.setCredentials(config['credentials']['sparql_username'],
+                      config['credentials']['sparql_password'])
 
 
 def select_relationships(ontology_prefix, ontology_uri, subject, object):
     sparql.setQuery(
-        """PREFIX %s: %s
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX san: <http://www.irit.fr/recherches/MELODI/ontologies/SAN#>
-PREFIX cd: <https://things.interactions.ics.unisg.ch#>
-select ?type where{
-    %s:%s ?t ?a .
-    ?a rdf:type %s:%s ;
-       san:hasEffect ?effect .
-    ?effect rdf:type ?type ;
-            cd:observationCount ?count .
-} """ % (ontology_prefix, ontology_uri, ontology_prefix, subject, ontology_prefix, object)
+        """ PREFIX brick: <https://brickschema.org/schema/Brick#>
+            PREFIX prov: <http://www.w3.org/ns/prov#>
+            PREFIX %s: %s
+            PREFIX cd: <https://things.interactions.ics.unisg.ch#>
+            select ?influence_type ?rating 
+            where{
+                ?influence a prov:Entity ;
+               a %s:%s .
+                %s:%s brick:hasTag ?t1 .
+                ?entity a prov:Entity;
+                prov:wasInfluencedBy ?influence;
+                prov:qualifiedInfluence [ 
+                a prov:EntityInfluence ; prov:influencer ?m1 ; cd:influenceType ?influence_type ;  cd:rating ?rating ;] .
+                } 
+            """ % (ontology_prefix, ontology_uri, ontology_prefix, object, ontology_prefix, subject)
     )
-    found_relationships = []
+    found_relationships = {}
+    count = 0
     sparql.setReturnFormat(JSON)
     qres2 = sparql.query().convert()
     for r in qres2['results']['bindings']:
-        data = []
+        data = {}
         for i in r:
-            data.append(r[i]['value'])
-        found_relationships.append(data)
+            data.update({i: r[i]['value']})
+        found_relationships.update({count: data})
+        count += 1
     return found_relationships
 
 
 def show_effects(ontology_prefix, ontology_uri, subject):
     sparql.setQuery(
-        """PREFIX %s: %s
-PREFIX brick: <https://brickschema.org/schema/Brick#>
-PREFIX cd: <https://things.interactions.ics.unisg.ch#>
-PREFIX san: <http://www.irit.fr/recherches/MELODI/ontologies/SAN#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-select ?entity ?type ?count ?rating ?feedback where{
-    %s:%s san:isActedUponBy ?e .
-    ?e rdf:type ?entity ;
-       san:hasEffect ?effect .
-    ?effect rdf:type ?type ;
-            cd:observationCount ?count ;
-    	cd:textualFeedback ?feedback ;
-        cd:influenceRating ?rating .
-} """ % (ontology_prefix, ontology_uri, ontology_prefix, subject)
+        """ PREFIX brick: <https://brickschema.org/schema/Brick#>
+            PREFIX prov: <http://www.w3.org/ns/prov#>
+            PREFIX %s: %s
+            PREFIX cd: <https://things.interactions.ics.unisg.ch#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            select ?influence ?influence_type ?feature ?rating ?feedback
+            where{
+               
+                %s:%s brick:hasTag ?t1 .
+    
+                ?i a prov:Entity ;
+                   rdfs:label ?influence .
+    			
+    			?t1 rdfs:label ?feature ;
+                			a prov:Entity;
+                			prov:wasInfluencedBy ?i;
+                            prov:qualifiedInfluence [ 
+                            a prov:EntityInfluence ; 
+                            prov:influencer ?i ;
+                            cd:influenceType ?influence_type ; 
+                            cd:rating ?rating ;
+                            cd:textualFeedback ?feedback ; ] .
+
+                } 
+        """ % (ontology_prefix, ontology_uri, ontology_prefix, subject)
     )
     found_relationships = {}
     sparql.setReturnFormat(JSON)
@@ -65,39 +83,45 @@ select ?entity ?type ?count ?rating ?feedback where{
     return found_relationships
 
 
-def insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object, count, feedback, rating):
-    sparqlpost = SPARQLWrapper(config['resources']['sparql_endpoint'] + "/statements")
-    sparqlpost.setCredentials(config['credentials']['sparql_username'], config['credentials']['sparql_password'])
+def insert_relationship(ontology_prefix, ontology_uri, subject, predicate, object, count, feedback, rating, feature):
+    sparqlpost = SPARQLWrapper(
+        config['resources']['sparql_endpoint'] + "/statements")
+    sparqlpost.setCredentials(
+        config['credentials']['sparql_username'], config['credentials']['sparql_password'])
 
     sparqlpost.setQuery(
-        """PREFIX %s: %s
-PREFIX brick: <https://brickschema.org/schema/Brick#>
-PREFIX cd: <https://things.interactions.ics.unisg.ch#>
-PREFIX san: <http://www.irit.fr/recherches/MELODI/ontologies/SAN#>
+        """ PREFIX brick: <https://brickschema.org/schema/Brick#>
+            PREFIX prov: <http://www.w3.org/ns/prov#>
+            PREFIX %s: %s
+            PREFIX cd: <https://things.interactions.ics.unisg.ch#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-INSERT{ 
-    ?m1 a %s:%s .
-    ?o1 a cd:%s ;
-    cd:observationCount %s ;
-    cd:textualFeedback "%s";
-    cd:influenceRating  %s.
-    ?m1 san:hasEffect ?o1 .
-    %s:%s san:isActedUponBy ?m1 .
-
-    } 
-
-WHERE{
-    SELECT  ?m1 ?o1
-    WHERE{
-
-    BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#contextsensor",strUUID())) as ?m1) . 
-    BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#contextseffect",strUUID())) as ?o1) .
-
-    }
-    }	
-        """ % (
-            ontology_prefix, ontology_uri, ontology_prefix, object, predicate, count, feedback, rating, ontology_prefix,
-            subject)
+            INSERT{ 
+                ?m1 a %s:%s ;
+                    a prov:Entity ;
+                    rdfs:label '%s' .
+                %s:%s brick:hasTag ?t1 .
+                ?t1 a %s:%s ;
+                    rdfs:label '%s' ;
+                a prov:Entity ;
+                prov:wasInfluencedBy ?m1 ;
+                prov:qualifiedInfluence [ 
+                a prov:EntityInfluence ; 
+                prov:influencer ?m1 ;
+                cd:influenceType "%s" ;
+                cd:rating %s ;
+                cd:textualFeedback "%s" ; ] .
+                } 
+                
+            WHERE{
+               
+                BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#context",
+                strUUID())) as ?m1) .
+                BIND(IRI(CONCAT("https://things.interactions.ics.unisg.ch#context",
+                strUUID())) as ?t1) .
+                
+            }
+            """ % (ontology_prefix, ontology_uri, ontology_prefix, object, object, ontology_prefix, subject, ontology_prefix, feature, feature, predicate, rating, feedback)
 
     )
     sparqlpost.setMethod(POST)
@@ -116,11 +140,10 @@ def discover_context(ontology_prefix, ontology_uri, seed, cps_name=['RB30_OG4_61
     for c in cps_name:
         sparql.setQuery(
             """PREFIX %s: %s
-            PREFIX brick: <https://brickschema.org/schema/Brick#>
             DESCRIBE ?td where
             {
-            %s:%s %s:%s ?td
-            }""" % (ontology_prefix, ontology_uri, ontology_prefix, c, ontology_prefix, seed)
+            %s:%s %s:hasTD ?td
+            }""" % (ontology_prefix, ontology_uri, ontology_prefix, c, ontology_prefix)
 
         )
         cps_td = ''
@@ -131,18 +154,16 @@ def discover_context(ontology_prefix, ontology_uri, seed, cps_name=['RB30_OG4_61
         g.parse(data=qres1, format="n3")
         data = g.serialize(format='n3')
         cps_td = data.split("\n\n")[1].split('"')[1]
-        # TODO: can we use select instead of describe for sparql query? td link extraction would be easier. Perhaps add title to the instances and then select instances based on titles. it would return JSON and then easier to extract the TD link.
-        # TODO: ask users for context relationship like hasTD
-        # TODO: solve error that includes kims lamp. it gives an opportunity to filter on expeected terms in any data stream. Update error info to say exactly that 
+        # TODO: store the ontology prefixes of all the variables
         sparql.setQuery(
             """PREFIX %s: %s
             PREFIX brick: <https://brickschema.org/schema/Brick#>
             select ?TD{
-                %s:%s brick:hasLocation ?loc .
-                ?things brick:hasLocation ?loc;
-                                   hsg:%s ?TD .  
+                %s:%s brick:%s ?loc .
+                ?things brick:%s ?loc;
+                                   hsg:hasTD ?TD .  
             }	
-            """ % (ontology_prefix, ontology_uri, ontology_prefix, c, seed)
+            """ % (ontology_prefix, ontology_uri, ontology_prefix, c, seed, seed)
         )
 
         sparql.setReturnFormat(JSON)
@@ -226,8 +247,3 @@ def discover_context(ontology_prefix, ontology_uri, seed, cps_name=['RB30_OG4_61
 
     return location, context_variables
 '''
-
-
-
-
-

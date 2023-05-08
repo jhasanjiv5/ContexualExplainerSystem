@@ -4,3 +4,4 @@
 config.ini
 *.csv
 .DS_Store
+/contextual_explainer/src/knowledge_base/
