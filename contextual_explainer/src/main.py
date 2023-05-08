@@ -1,9 +1,6 @@
-from cmath import nan
-from operator import countOf
 from DiscoverEnvironment import collectLogs, discover
 from TimeSyncAndCorrelation import correlate
 from SurrogateModels import classifier as cl
-from sklearn import model_selection
 from Explainers import explainer as ex
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
@@ -12,13 +9,10 @@ from numpy import mean, std
 
 import pandas as pd
 import numpy as np
-from PIL import Image
 from tabulate import tabulate
 from keywordExtraction import keywordExtract as ky
 from datetime import *
-import matplotlib.pyplot as plt
 from sklearn import preprocessing
-from sklearn import utils
 import math
 
 
@@ -139,29 +133,28 @@ def run_explanation_system():
         "Enter the ontology uri: ") or "<http://semantics.interactions.ics.unisg.ch/livingcampus#>"
     seed = input(
         "Enter the relationship name to discover the Thing Descriprions: ") or "hasLocation"
+    
     # show existing relationships
-
     print('''Existing Contextual Influences for {}'''.format(query))
-
     effects_data = discover.show_effects(ontology_prefix, ontology_uri, query)
     df = pd.DataFrame(effects_data).T
     df.fillna(0, inplace=True)
     print(df)
 
-    # start gathering thing descriptions
+    # Context Discovery: start gathering thing descriptions
     cps_td, contextual_variables = discover.discover_context(
         ontology_prefix, ontology_uri, seed, [query])
     print("Thing Description found for CPS:")
     print(cps_td)
-
     print("Found observable context features:")
     print(contextual_variables)
 
-    # start collecting data
+    # Context Discovery: start collecting data
     links = collectLogs.get_links(cps_td, contextual_variables)
     dfs = collectLogs.get_logs(links)
     print(dfs.head())
-    # check if the colims have numeric values for correlation
+    
+    # Correlation
     is_numeric_ds = dfs.apply(lambda s: pd.to_numeric(
         s, errors='coerce').notnull().all())
     corr = []
@@ -170,8 +163,7 @@ def run_explanation_system():
             corr.append(k)
     corr_ds = dfs[corr]
     corr_dict = {}
-
-    # NOTE: correlation is found in the demo because the pawerstatus is not binary but vriable as per the brightness of the light perhaps
+    # NOTE: correlation is found in the demo because the powerstatus is not binary but vriable as per the brightness of the light perhaps
     for i in range(corr_ds.shape[1]):
         variable_name = corr_ds.columns[i]
         variable_value = corr_ds.iloc[:, i]
@@ -189,15 +181,17 @@ def run_explanation_system():
     sensors = corr_ds[columns]
     print(sensors.head())
     class_names = class_name_input+'Class'
+    # Labeling
     sensors[class_names] = np.where(
         sensors[class_name_input] > 0.5, 'High', 'Low')
-    # correlate.check_for_correlation(sensors)  # select features based of the correlation values
+    sensors.to_csv("sensors_data.csv")
+    
+    # Create surrogate model
     X = sensors.loc[:, sensors.columns != class_names]
     y = sensors.loc[:, class_names]
     feature_names = list(X.columns)
     X_values = X.values  # only supports arrays atm
     y_values = y.values
-    # y.name
     cat_feat = []
     lab = preprocessing.LabelEncoder()
     y_transformed = lab.fit_transform(y_values)
@@ -210,39 +204,32 @@ def run_explanation_system():
     cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
     n_scores = cross_val_score(
         clf, X, y, scoring='accuracy', cv=cv, n_jobs=-1, error_score='raise')
-    # report performance
+    
+    # report performance of the surrogate model
     print('Accuracy: %.3f (%.3f)' % (mean(n_scores), std(n_scores)))
-    # query_instance = X_test[0:1]
     timestamp = corr_ds.columns[corr_ds.columns.isin(['time', 'timestamp'])][0]
-
     query_instance = sensors.loc[corr_ds[timestamp]
                                  == selected_datetime, feature_names]
     query_instance = query_instance.iloc[:, :]
     print(query_instance)
     print('Model Prediction:')
     print(clf.predict(query_instance))
-
     print('Query Instance:')
     print(tabulate(query_instance, headers=feature_names,
           tablefmt='pretty', missingval='N/A'))
 
-    # shap explainer
-
-    #ex.shap_explain(sensors, clf.predict, X_test[0:1000, :], class_names, X_train, feature_names)
-
-    # dice explainer
+    # Create counterfactuals
     cf = ex.dice_explain(
         clf, sensors.iloc[:, :], query_instance, feature_names, class_names)
     print(cf)
 
-    # ask users to choose the countefactual
+    # Ask users to Play rashmon game and choose a counterfactual
     if cf is not None:
         cf_select = int(input(
-            'Select an index from the presented counterfactual based on feasibility and actionability of it:'))
+            'Select an index from the presented counterfactual based on the result of the rashomon game:'))
         visualize_explanation(clf, cf.loc[[cf_select], feature_names], query_instance, feature_names,
                               ontology_prefix, ontology_uri, subject=query, feature=class_name_input)
 
 
 if __name__ == '__main__':
-    # cps_td, contextual_variables = discover.discover_context('hsg:RB30_OG4_61-400_standing_light_1')
     run_explanation_system()

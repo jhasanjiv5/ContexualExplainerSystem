@@ -1,9 +1,16 @@
 import pandas as pd
 import requests
-import json
+import time
 
 
 def get_links(cps_td, context_variables):
+    """
+    Query the context and coolect URIs
+
+    :param cps_td 
+    :param context_variables
+    :return: object (collectionod links)
+    """
     links = dict()
     results = requests.get(cps_td)
     r = results.json()
@@ -18,7 +25,7 @@ def get_links(cps_td, context_variables):
             links.update({
                 i: r['properties'][i]['forms'][0]['href']})
 
-        return links
+    return links
 
 
 def get_logs(links):
@@ -34,20 +41,35 @@ def get_logs(links):
             # for using the demo living-campus TDs with 10.2.2.33 address
             c = c.replace('10.2.2.33', '127.0.0.1')
             if '&duration=1' in c:
-                result = requests.get(c + '100')
+                result = requests.get(c)
             else:
+  
                 result = requests.get(c + '&duration=1100')
-            # 'SELECT mean("humidity"), mean("temperature"), mean("light"), mean("uvi"), mean("pressure") FROM "thunderboard_086bd7fe10cb" WHERE time >= now() - 30d and time <= now() GROUP BY time(1h) fill(linear);')
             if result.status_code == 200:
                 r = result.json()
-                df = pd.DataFrame(data=r)
-                if not df.empty:
-                    df = df.rename(columns={'value': k})
-                    df['time'] = pd.to_datetime(df['time'])
-                    if dfs.empty:
-                        dfs = df
-                    else:
-                        dfs = pd.merge_asof(dfs, df, on='time')
+                if len(r) == 0:
+                    t_end = time.time() + 1000 #ask for next 1000(seconds) entries one at a time, it can be modified based on the data frequeny of the sensor
+                    data_dict = dict()
+                    while time.time() < t_end:
+                        data_dict.update((requests.get(c)).json())                   
+                        
+                    df = pd.DataFrame(data=data_dict)
+                    if not df.empty:
+                        df = df.rename(columns={'value': k})
+                        df['time'] = pd.to_datetime(df['time'])
+                        if dfs.empty:
+                            dfs = df
+                        else:
+                            dfs = pd.merge_asof(dfs, df, on='time')
+                else:
+                    df = pd.DataFrame(data=r)
+                    if not df.empty:
+                        df = df.rename(columns={'value': k})
+                        df['time'] = pd.to_datetime(df['time'])
+                        if dfs.empty:
+                            dfs = df
+                        else:
+                            dfs = pd.merge_asof(dfs, df, on='time')
     except Exception as err:
         print(err)
         raise
