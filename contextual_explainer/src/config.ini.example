@@ -5,9 +5,9 @@ sparql_username = user
 sparql_password = passwd
 
 [resources]
-url = interactions.ics.unisg.ch
+url = example_url.url
 database_name = sensor_net
 port = 8086
 contextApiUrl = http://127.0.0.1:5000/context?sensorname=
-#sparql_endpoint = https://graphdb.interactions.ics.unisg.ch/repositories/explanantion-cd
+#sparql_endpoint = https://example_url.url/repositories/explanantion-cd
 sparql_endpoint = http://127.0.0.1:7200/repositories/explanation-cd

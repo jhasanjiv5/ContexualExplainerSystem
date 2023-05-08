@@ -122,15 +122,15 @@ def run_explanation_system():
     )
     print("---------Query-------------")
     query = input(
-        "Enter name of the entity: ") or "RB30_OG4_61-400_standing_lamp_1"
+        "Enter name of the entity: ") or "ex_standing_lamp_1"
     class_name_input = input(
         "Enter feature name for finding influence:") or "lightPowerStatus"
     selected_datetime = input(
         "Enter datetime of query instance: ") or "2022-01-01T00:00:00Z"
     print("---------Context Discovery-")
-    ontology_prefix = input("Enter the ontology prefix used: ") or "hsg"
+    ontology_prefix = input("Enter the ontology prefix used: ") or "ex"
     ontology_uri = input(
-        "Enter the ontology uri: ") or "<http://semantics.interactions.ics.unisg.ch/livingcampus#>"
+        "Enter the ontology uri: ") or "<http://.../livingcampus#>"
     seed = input(
         "Enter the relationship name to discover the Thing Descriprions: ") or "hasLocation"
     
