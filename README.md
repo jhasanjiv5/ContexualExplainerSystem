@@ -31,7 +31,7 @@ Note: To keep the anonymity of the submission, we can not provide the thing desc
    Contextual Explanation System
 
    ---------Query-------------
-   Enter name of the entity: Example_lamp_1
+   Enter name of the entity: example_lamp_1
    Enter feature name for finding influence: lightPowerStatus
    Enter datetime of query instance: 2022-01-01T00:00:00Z
 
@@ -45,9 +45,9 @@ Note: To keep the anonymity of the submission, we can not provide the thing desc
    Select a counterfactual: 2 (index of the counterfactual, Light brightness level 0.7)
 
    Contextual Explanation:
-   Room Temperature has positiveInfluence on light brightness Level of Example_lamp_1
+   Room Temperature has positiveInfluence on light brightness Level of example_lamp_1
 
-   The preserved influences between ex:Example_lamp_1 and brick:Temperature have been reviewed 16 times by the users as positiveInfluence
+   The preserved influences between ex:example_lamp_1 and brick:Temperature have been reviewed 16 times by the users as positiveInfluence
 
    Average ratings for the preserved contextual influence:
    {'positiveInfluence': 0.75, 'negativeInfluence': 0.0}
