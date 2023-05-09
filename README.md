@@ -2,7 +2,7 @@
 
 ![1683203549113](image/README/Contextual_Explainer_System.drawio.png)
 
-Note: To keep the anonymity of the submission, we can not provide the thing descriptions and the knowledge graphs for simulating the results. Hence, one has to set up the environment and provide appropriate input to the system for generating contextual explanations.
+Note: To keep the anonymity of the submission, we can not provide the thing descriptions and the knowledge graphs for simulating the results. Hence, one has to set up the environment and provide appropriate input to the system for generating contextual explanations. To keep the anonymity of the submission, we can not provide the thing descriptions and the knowledge graphs for simulating the results. Hence, one has to set up the environment and provide appropriate input to the system for generating contextual explanations. For testing ACES with exisiting data, please use sensors_data.csv to populate the log data in your environemnt. It is a labeled data set used for demonstraing the prototype in this paper with features (attributes) such as Lamp brighness level(lightPowerStatus), indoor temperature (temperature), humidity, light, Outdoor temperature (Temperature), Outdoor (LightLevel), Brightness status label (lightPowerStatusClass).
 
 1. Setup the context knowledge graph
       . Setup GraphDB to run SPARQL queries to retrieve the Thing Descriptions [GraphDB setup](https://graphdb.ontotext.com/documentation/10.0/quick-start-guide.html)
