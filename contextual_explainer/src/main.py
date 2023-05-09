@@ -122,7 +122,7 @@ def run_explanation_system():
     )
     print("---------Query-------------")
     query = input(
-        "Enter name of the entity: ") or "ex_standing_lamp_1"
+        "Enter name of the entity: ") or "example_lamp_1"
     class_name_input = input(
         "Enter feature name for finding influence:") or "lightPowerStatus"
     selected_datetime = input(
