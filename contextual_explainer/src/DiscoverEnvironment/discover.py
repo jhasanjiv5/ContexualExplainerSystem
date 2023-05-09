@@ -16,7 +16,7 @@ def select_relationships(ontology_prefix, ontology_uri, subject, object):
         """ PREFIX brick: <https://brickschema.org/schema/Brick#>
             PREFIX prov: <http://www.w3.org/ns/prov#>
             PREFIX %s: %s
-            PREFIX cd: <https://things.interactions.ics.unisg.ch#>
+            PREFIX cd: <https://things.example.com#>
             select ?influence_type ?rating 
             where{
                 ?influence a prov:Entity ;
@@ -47,7 +47,7 @@ def show_effects(ontology_prefix, ontology_uri, subject):
         """ PREFIX brick: <https://brickschema.org/schema/Brick#>
             PREFIX prov: <http://www.w3.org/ns/prov#>
             PREFIX %s: %s
-            PREFIX cd: <https://things.interactions.ics.unisg.ch#>
+            PREFIX cd: <https://things.example.com#>
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
             select ?influence ?influence_type ?feature ?rating ?feedback
             where{
