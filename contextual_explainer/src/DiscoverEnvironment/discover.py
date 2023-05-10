@@ -161,7 +161,7 @@ def discover_context(ontology_prefix, ontology_uri, seed, cps_name=['ex_lamp_1']
             select ?TD{
                 %s:%s brick:%s ?loc .
                 ?things brick:%s ?loc;
-                                   ex:hasTD ?TD .  
+                                   hsg:hasTD ?TD .  
             }	
             """ % (ontology_prefix, ontology_uri, ontology_prefix, c, seed, seed)
         )

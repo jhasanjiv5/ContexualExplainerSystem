@@ -1,12 +1,14 @@
+from cmath import nan
+from operator import countOf
 from DiscoverEnvironment import collectLogs, discover
 from TimeSyncAndCorrelation import correlate
 from SurrogateModels import classifier as cl
+from sklearn import model_selection
 from Explainers import explainer as ex
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import RepeatedStratifiedKFold
 from numpy import mean, std
-
 import pandas as pd
 import numpy as np
 from tabulate import tabulate
@@ -122,15 +124,15 @@ def run_explanation_system():
     )
     print("---------Query-------------")
     query = input(
-        "Enter name of the entity: ") or "ex_standing_lamp_1"
+        "Enter name of the entity: ") or "RB30_OG4_61-400_standing_lamp_1"
     class_name_input = input(
         "Enter feature name for finding influence:") or "lightPowerStatus"
     selected_datetime = input(
         "Enter datetime of query instance: ") or "2022-01-01T00:00:00Z"
     print("---------Context Discovery-")
-    ontology_prefix = input("Enter the ontology prefix used: ") or "ex"
+    ontology_prefix = input("Enter the ontology prefix used: ") or "hsg"
     ontology_uri = input(
-        "Enter the ontology uri: ") or "<http://.../livingcampus#>"
+        "Enter the ontology uri: ") or "<http://semantics.interactions.ics.unisg.ch/livingcampus#>"
     seed = input(
         "Enter the relationship name to discover the Thing Descriprions: ") or "hasLocation"
     

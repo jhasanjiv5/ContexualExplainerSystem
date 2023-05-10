@@ -1,19 +1,20 @@
 # Actionable Contextual Explanation System (ACES)
 
 ![1683203549113](image/README/1683203549113.png)
+Note: To keep the anonymity of the submission, we can not provide the thing descriptions and the knowledge graphs for simulating the results. Hence, one has to set up the environment and provide appropriate input to the system for generating contextual explanations. For testing ACES with exisiting data, please use sensors_data.csv to populate the log data in your environemnt. It is a labeled data set used for demonstraing the prototype in this paper with features (attributes) such as Lamp brighness level(lightPowerStatus), indoor temperature (temperature), humidity, light, Outdoor temperature (Temperature), Outdoor (LightLevel), Brightness status label (lightPowerStatusClass).
 
-1. Setup the context and knowledge base
-
-   1. Setup InfluxDB for gathering the data form the sensors
-   2. Setup NodeRed for accessing those sensor data through REST methods
-   3. Setup GraphDB to run SPARQL queries to retrieve the Thing Descriptions
-      . Upload the knowledge graphs and ontologies to your GraphDB repository
+1. Setup the context knowledge graph
+      . Setup GraphDB to run SPARQL queries to retrieve the Thing Descriptions [GraphDB setup](https://graphdb.ontotext.com/documentation/10.0/quick-start-guide.html)
+      . Upload the knowledge graphs and ontologies to your GraphDB repository. The external ontologies used for ACES are:
+         [BRICK Ontology](https://brickschema.org/schema/Brick#)
+         [Prov-O Ontology](http://www.w3.org/ns/prov#)
 2. Update the credentials in config.ini (rename the file config.ini.example to config.ini)
 3. Install required packages for Python 3.8.2
 
    ```zsh
    python install -r requirements.txt
    ```
+
 4. Run the system:
 
    a. Using the setup:
@@ -22,6 +23,7 @@
    cd contextual_explainer/src/
    python main.py
    ```
+
    Example (simplified) of an interaction and the output of the system:
 
    ```macos
@@ -34,7 +36,7 @@
 
    ---------Context Discovery-
    Enter the ontology prefix used: hsg
-   Enter the ontology uri: <http://semantics.interactions.ics.unisg.ch/livingcampus#>
+   Enter the ontology uri: <http://.../livingcampus#>
    Enter the relationship name to discover the Thing Descriprions: hasLocation
 
    Surrogate model accuracy: 98.93%

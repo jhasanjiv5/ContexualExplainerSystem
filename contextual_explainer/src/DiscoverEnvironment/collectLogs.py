@@ -38,6 +38,8 @@ def get_logs(links):
     dfs = pd.DataFrame(data=None)
     try:
         for k, c in links.items():
+            # for using the demo living-campus TDs with 10.2.2.33 address
+            c = c.replace('10.2.2.33', '127.0.0.1')
             if '&duration=1' in c:
                 result = requests.get(c)
             else:
@@ -46,7 +48,7 @@ def get_logs(links):
             if result.status_code == 200:
                 r = result.json()
                 if len(r) == 0:
-                    t_end = time.time() + 1000 #ask for next 1000(seconds) entries one at a time, it can be modified based on the data frequeny of the sensor
+                    t_end = time.time() + 10 #ask for next 1000(seconds) entries one at a time, it can be modified based on the data frequeny of the sensor
                     data_dict = dict()
                     while time.time() < t_end:
                         data_dict.update((requests.get(c)).json())                   
