@@ -113,8 +113,6 @@ def visualize_explanation(clf, cf, query_instance, feature_names, ontology_prefi
 
     return related_features
 
-#
-
 
 def run_explanation_system():
     print(
