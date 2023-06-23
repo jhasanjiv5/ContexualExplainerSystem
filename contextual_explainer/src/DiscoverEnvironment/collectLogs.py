@@ -36,7 +36,6 @@ def get_logs(links):
     :return: object (collective data frame)
     """
     dfs = pd.DataFrame(data=None)
-    links = {'temperature':'http://10.2.2.33:1880/InfluxDB?measurement=thunderboard_086bd7fe10cb&field=temperature&duration=1', 'humidity':'http://10.2.2.33:1880/InfluxDB?measurement=thunderboard_086bd7fe10cb&field=humidity&duration=1'}
     try:
         for k, c in links.items():
             # for using the demo living-campus TDs with 10.2.2.33 address
@@ -47,7 +46,7 @@ def get_logs(links):
                 if result.status_code == 200:
                     r = result.json()
                     if len(r) == 0:
-                        time.sleep(900000) 
+                        time.sleep(300) 
                         continue
                     df = pd.DataFrame(data=r)
                     if not df.empty:
@@ -60,7 +59,7 @@ def get_logs(links):
                             dfs = pd.merge_asof(dfs, df, on='time')
                             print(len(dfs.index))
                         dfs.drop_duplicates(inplace=True)
-                        time.sleep(900000)
+                        time.sleep(300)
     except Exception as err:
         print(err)
         raise
